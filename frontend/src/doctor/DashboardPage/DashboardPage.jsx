@@ -235,7 +235,7 @@ export default function DashboardPage({ apiBase }) {
     (a) => a.status === "cancelled",
   ).length;
   const totalEarnings = appointments
-    .filter((a) => a.status === "complete")
+    .filter((a) => a.status === "complete" || a.status === "confirmed")
     .reduce((s, a) => s + (Number(a.fee) || 0), 0);
 
   /* -------------------------

@@ -36,10 +36,18 @@ function parseTimeString(timeStr) {
 }
 
 const buildFrontendBase = (req) => {
+  const origin = req.get("origin") || req.get("referer");
+  if (origin) {
+    try {
+      const url = new URL(origin);
+      return url.origin;
+    } catch (e) {
+      return origin.replace(/\/$/, "");
+    }
+  }
   const env = process.env.FRONTEND_URL;
   if (env) return env.replace(/\/$/, "");
-  const origin = req.get("origin") || req.get("referer") || null;
-  return origin ? origin.replace(/\/$/, "") : null;
+  return null;
 };
 
 function resolveClerkUserId(req) {
@@ -213,7 +221,7 @@ export const createServiceAppointment = async (req, res) => {
     try {
       const created = await ServiceAppointment.create({
         ...base,
-        status: "Confirmed",
+        status: "Pending",
         payment: { method: "Online", status: "Pending", amount: numericAmount, sessionId: session.id || "" },
       });
       return res.status(201).json({ success: true, appointment: created, checkoutUrl: session.url || null });
@@ -246,7 +254,7 @@ export const confirmServicePayment = async (req, res) => {
       { "payment.sessionId": session_id },
       {
         $set: {
-          "payment.status": "Confirmed",
+          "payment.status": "Paid",
           "payment.providerId": session.payment_intent || "",
           "payment.paidAt": new Date(),
           status: "Confirmed",
@@ -260,7 +268,7 @@ export const confirmServicePayment = async (req, res) => {
         { _id: session.metadata.appointmentId },
         {
           $set: {
-            "payment.status": "Confirmed",
+            "payment.status": "Paid",
             "payment.providerId": session.payment_intent || "",
             "payment.paidAt": new Date(),
             status: "Confirmed",
@@ -404,9 +412,19 @@ export const getServiceAppointmentStats = async (req, res) => {
           totalAppointments: { $size: "$appointments" },
           completed: { $size: { $filter: { input: "$appointments", as: "a", cond: { $eq: ["$$a.status", "Completed"] } } } },
           canceled: { $size: { $filter: { input: "$appointments", as: "a", cond: { $eq: ["$$a.status", "Canceled"] } } } },
+          earning: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: { input: "$appointments", as: "a", cond: { $in: ["$$a.status", ["Confirmed", "Completed"]] } }
+                },
+                as: "p",
+                in: { $ifNull: ["$$p.fees", 0] }
+              }
+            }
+          }
         },
       },
-      { $addFields: { earning: { $multiply: ["$completed", "$price"] } } },
       { $project: { name: 1, price: 1, image: "$imageUrl", totalAppointments: 1, completed: 1, canceled: 1, earning: 1 } },
       { $sort: { createdAt: -1 } },
     ]);

@@ -54,6 +54,7 @@ function normalizeService(doc) {
     doc.stats?.canceled ??
     doc.canceledAppointments ??
     0;
+  const earning = doc.earning ?? doc.earnings ?? (Number(completed) * price);
 
   return {
     id,
@@ -63,6 +64,7 @@ function normalizeService(doc) {
     totalAppointments: Number(totalAppointments) || 0,
     completed: Number(completed) || 0,
     canceled: Number(canceled) || 0,
+    earning: Number(earning) || 0,
     raw: doc,
   };
 }
@@ -256,7 +258,7 @@ export default function ServiceDashboard({ services: servicesProp = null }) {
         acc.totalAppointments += s.totalAppointments;
         acc.totalCompleted += s.completed;
         acc.totalCanceled += s.canceled;
-        acc.totalEarning += s.completed * s.price;
+        acc.totalEarning += s.earning;
         return acc;
       },
       {
@@ -398,7 +400,7 @@ export default function ServiceDashboard({ services: servicesProp = null }) {
               </div>
             ) : (
               visibleServices.map((s) => {
-                const earning = s.completed * s.price;
+                const earning = s.earning;
                 return (
                   <div
                     key={s.id}

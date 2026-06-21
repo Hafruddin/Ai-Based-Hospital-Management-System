@@ -18,9 +18,16 @@ const safeNumber = (v) => {
 };
 
 const buildFrontendBase = (req) => {
-  if (FRONTEND_URL) return FRONTEND_URL.replace(/\/$/, "");
   const origin = req.get("origin") || req.get("referer");
-  if (origin) return origin.replace(/\/$/, "");
+  if (origin) {
+    try {
+      const url = new URL(origin);
+      return url.origin;
+    } catch (e) {
+      return origin.replace(/\/$/, "");
+    }
+  }
+  if (FRONTEND_URL) return FRONTEND_URL.replace(/\/$/, "");
   const host = req.get("host");
   if (host) return `${req.protocol || "http"}://${host}`.replace(/\/$/, "");
   return null;
