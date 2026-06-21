@@ -42,7 +42,7 @@ app.use(express.urlencoded({ limit: "20mb", extended: true }));
 connectDB();
 
 // Static uploads folder
-app.use('/assets', express.static(path.join(process.cwd(), '../frontend/src/assets')));
+app.use('/assets', express.static(path.join(process.cwd(), 'assets')));
 
 // Routes (unchanged)
 app.use("/api/appointments", appointmentRouter);

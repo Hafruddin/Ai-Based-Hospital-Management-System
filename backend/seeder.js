@@ -394,7 +394,7 @@ const seedDB = async () => {
     const doctors = doctorsData.map((d) => ({
       ...d,
       password: "password123", // default password
-      imageUrl: `http://localhost:4000/assets/${d.imageFile}`,
+      imageUrl: `https://ai-based-hospital-management-system-main.onrender.com/assets/${d.imageFile}`,
       schedule: generateNext7DaysSlots()
     }));
 
@@ -404,7 +404,7 @@ const seedDB = async () => {
     // Seed Services
     const services = servicesData.map((s) => ({
       ...s,
-      imageUrl: `http://localhost:4000/assets/${s.imageFile}`,
+      imageUrl: `https://ai-based-hospital-management-system-main.onrender.com/assets/${s.imageFile}`,
       slots: generateNext7DaysSlots(),
       dates: Object.keys(generateNext7DaysSlots())
     }));
