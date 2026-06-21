@@ -9,7 +9,8 @@ import { clerkClient } from "@clerk/clerk-sdk-node";
 import {
   createMockAppointment,
   getMockAppointments,
-  updateMockAppointment
+  updateMockAppointment,
+  getMockDoctorById
 } from "../utils/mockDb.js";
 dotenv.config();
 
@@ -477,7 +478,7 @@ export const createAppointment = async (req, res) => {
     }
   } catch (err) {
     console.error("createAppointment unexpected:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res.status(500).json({ success: false, message: `Server error: ${err.message}` });
   }
 };
 
