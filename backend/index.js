@@ -3,7 +3,7 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import mongoose from 'mongoose';
-import { connectDB } from './config/db.js';
+import { connectDB, dbConnectionInfo } from './config/db.js';
 
 // ⭐ ADD CLERK MIDDLEWARE
 import { clerkMiddleware } from "@clerk/express";
@@ -56,6 +56,7 @@ app.get('/', (req, res) => {
     res.json({
         message: 'API Working ',
         dbState: mongoose.connection.readyState,
+        dbError: dbConnectionInfo.error,
         hasUri: !!process.env.MONGODB_URI,
         hasSecret: !!process.env.JWT_SECRET
     });

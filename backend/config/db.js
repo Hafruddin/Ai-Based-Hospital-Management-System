@@ -1,14 +1,25 @@
 import mongoose from "mongoose";
 
+export const dbConnectionInfo = {
+    error: null
+};
+
 export const connectDB = async () => {
     const uri = process.env.MONGODB_URI;
     if (!uri) {
         console.error("❌ MONGODB_URI is not defined in .env file");
+        dbConnectionInfo.error = "MONGODB_URI is not defined";
         return;
     }
     await mongoose.connect(uri)
-        .then(() => { console.log("✅ DB connected") })
-        .catch((err) => { console.error("❌ DB Connection Error:", err.message) });
+        .then(() => { 
+            console.log("✅ DB connected");
+            dbConnectionInfo.error = null;
+        })
+        .catch((err) => { 
+            console.error("❌ DB Connection Error:", err.message);
+            dbConnectionInfo.error = err.message;
+        });
 }
 
 
