@@ -2,6 +2,7 @@ import cors from 'cors';
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
+import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
 
 // ⭐ ADD CLERK MIDDLEWARE
@@ -52,7 +53,12 @@ app.use("/api/service-appointments", serviceAppointmentRouter);
 
 // Test route
 app.get('/', (req, res) => {
-    res.send('API Working ');
+    res.json({
+        message: 'API Working ',
+        dbState: mongoose.connection.readyState,
+        hasUri: !!process.env.MONGODB_URI,
+        hasSecret: !!process.env.JWT_SECRET
+    });
 });
 
 app.listen(port, () => {
