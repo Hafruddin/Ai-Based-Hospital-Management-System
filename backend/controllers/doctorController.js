@@ -43,8 +43,9 @@ const rewriteImageUrl = (url, req) => {
     const assetIdx = url.indexOf('/assets/');
     if (assetIdx !== -1) {
       const path = url.slice(assetIdx);
-      const host = req.protocol + '://' + req.get('host');
-      return host + path;
+      const hostName = req.get('host') || "";
+      const protocol = (hostName.includes('localhost') || hostName.includes('127.0.0.1')) ? req.protocol : 'https';
+      return protocol + '://' + hostName + path;
     }
   }
   return url;

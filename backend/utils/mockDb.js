@@ -399,8 +399,9 @@ const servicesData = [
 ];
 
 const rewriteImageUrl = (imageFile, req) => {
-  const host = req.protocol + "://" + req.get("host");
-  return `${host}/assets/${imageFile}`;
+  const hostName = req.get('host') || "";
+  const protocol = (hostName.includes('localhost') || hostName.includes('127.0.0.1')) ? req.protocol : 'https';
+  return `${protocol}://${hostName}/assets/${imageFile}`;
 };
 
 export const getMockDoctors = (req) => {
