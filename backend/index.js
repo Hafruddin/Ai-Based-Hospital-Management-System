@@ -60,6 +60,7 @@ app.get('/', (req, res) => {
         dbError: dbConnectionInfo.error,
         hasUri: !!uri,
         uriLength: uri.length,
+        uriMasked: uri.slice(0, 20) + "..." + uri.slice(-25),
         uriStartsWithMongo: uri.startsWith("mongodb+srv://") || uri.startsWith("mongodb://"),
         uriHasQuotes: uri.includes('"') || uri.includes("'"),
         uriHasSpaces: uri.includes(' ') || uri.includes('\r') || uri.includes('\n'),
