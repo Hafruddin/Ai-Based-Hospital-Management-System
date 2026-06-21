@@ -1,10 +1,16 @@
 // controllers/appointmentController.js
 import Stripe from "stripe";
+import mongoose from "mongoose";
 import Appointment from "../models/Appointment.js";
 import Doctor from "../models/Doctor.js";
 import dotenv from "dotenv";
 import { getAuth } from "@clerk/express";
 import { clerkClient } from "@clerk/clerk-sdk-node";
+import {
+  createMockAppointment,
+  getMockAppointments,
+  updateMockAppointment
+} from "../utils/mockDb.js";
 dotenv.config();
 
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY;
@@ -53,6 +59,18 @@ function resolveClerkUserId(req) {
 
 export const getAppointments = async (req, res) => {
   try {
+    // Failsafe: Fallback to mock data if MongoDB is disconnected
+    if (mongoose.connection.readyState !== 1) {
+      const { doctorId, patientClerkId, createdBy } = req.query;
+      const filter = {};
+      if (doctorId) filter.doctorId = doctorId;
+      if (patientClerkId) filter.createdBy = patientClerkId;
+      if (createdBy) filter.createdBy = createdBy;
+
+      const mockAppts = getMockAppointments(filter);
+      return res.json({ success: true, appointments: mockAppts, meta: { page: 1, limit: mockAppts.length, total: mockAppts.length, isFallback: true } });
+    }
+
     const { doctorId, mobile, status, search = "", limit: limitRaw = 50, page: pageRaw = 1, patientClerkId, createdBy } = req.query;
     const limit = Math.min(200, Math.max(1, parseInt(limitRaw, 10) || 50));
     const page = Math.max(1, parseInt(pageRaw, 10) || 1);
@@ -88,6 +106,15 @@ export const getAppointments = async (req, res) => {
 export const getAppointmentById = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Failsafe: Fallback to mock data if MongoDB is disconnected
+    if (mongoose.connection.readyState !== 1) {
+      const mockAppts = getMockAppointments();
+      const appt = mockAppts.find((a) => String(a._id) === String(id) || String(a.id) === String(id));
+      if (!appt) return res.status(404).json({ success: false, message: "Appointment not found" });
+      return res.json({ success: true, appointment: appt });
+    }
+
     const appt = await Appointment.findById(id).populate("doctorId", "name specialization owner imageUrl image").lean();
     if (!appt) return res.status(404).json({ success: false, message: "Appointment not found" });
     return res.json({ success: true, appointment: appt });
@@ -111,6 +138,14 @@ export const getAppointmentsByPatient = async (req, res) => {
         message:
           "Authentication required for /me (no Clerk user detected on server). Try passing ?createdBy=<id> to debug or check Authorization header forwarding.",
       });
+    }
+
+    // Failsafe: Fallback to mock data if MongoDB is disconnected
+    if (mongoose.connection.readyState !== 1) {
+      const filter = {};
+      if (resolvedCreatedBy) filter.createdBy = resolvedCreatedBy;
+      const appointments = getMockAppointments(filter);
+      return res.json({ success: true, appointments });
     }
 
     const filter = {};
@@ -148,6 +183,136 @@ export const createAppointment = async (req, res) => {
       doctorImageUrl: doctorImageUrlFromBody,
       doctorImagePublicId: doctorImagePublicIdFromBody,
     } = req.body || {};
+
+    // Failsafe: Fallback to mock logic if MongoDB is disconnected
+    if (mongoose.connection.readyState !== 1) {
+      console.warn("⚠️ MongoDB is disconnected. Handling appointment creation in mock mode.");
+      
+      const clerkUserId = resolveClerkUserId(req);
+      if (!clerkUserId) return res.status(401).json({ success: false, message: "Authentication required (Clerk)" });
+
+      if (!doctorId || !patientName || !mobile || !date || !time) {
+        return res.status(400).json({ success: false, message: "doctorId, patientName, mobile, date and time are required" });
+      }
+
+      const numericFee = safeNumber(fee ?? fees ?? 0);
+      if (numericFee === null || numericFee < 0) {
+        return res.status(400).json({ success: false, message: "fee must be a valid number" });
+      }
+
+      // Check duplicates in mock memory
+      const mockAppts = getMockAppointments();
+      const existing = mockAppts.find(
+        (a) =>
+          String(a.doctorId) === String(doctorId) &&
+          String(a.createdBy) === String(clerkUserId) &&
+          String(a.date) === String(date) &&
+          String(a.time) === String(time) &&
+          a.status !== "Canceled"
+      );
+      if (existing) {
+        return res.status(409).json({ success: false, message: "You already have an appointment at this slot." });
+      }
+
+      const doctor = getMockDoctorById(doctorId, req);
+      if (!doctor) return res.status(404).json({ success: false, message: "Doctor not found" });
+
+      const doctorName = doctor.name || doctorNameFromBody || "";
+      const speciality = doctor.specialization || specialityFromBody || "";
+      const doctorImageUrl = doctor.imageUrl || doctorImageUrlFromBody || "";
+      const doctorImage = { url: doctorImageUrl, publicId: "" };
+
+      const base = {
+        doctorId: String(doctorId),
+        doctorName,
+        speciality,
+        doctorImage,
+        patientName: String(patientName).trim(),
+        mobile: String(mobile).trim(),
+        age: age ? Number(age) : undefined,
+        gender: gender ? String(gender) : "",
+        date: String(date),
+        time: String(time),
+        fees: numericFee,
+        status: "Pending",
+        payment: { method: paymentMethod === "Cash" ? "Cash" : "Online", status: "Pending", amount: numericFee },
+        notes: notes || "",
+        createdBy: clerkUserId,
+        owner: doctor.owner || MAJOR_ADMIN_ID || String(doctorId),
+        sessionId: null,
+      };
+
+      if (numericFee === 0) {
+        const created = createMockAppointment({
+          ...base,
+          status: "Confirmed",
+          payment: { method: base.payment.method, status: "Paid", amount: 0 },
+          paidAt: new Date(),
+        });
+        return res.status(201).json({ success: true, appointment: created, checkoutUrl: null });
+      }
+
+      if (paymentMethod === "Cash") {
+        const created = createMockAppointment({
+          ...base,
+          status: "Pending",
+          payment: { method: "Cash", status: "Pending", amount: numericFee },
+        });
+        return res.status(201).json({ success: true, appointment: created, checkoutUrl: null });
+      }
+
+      // Online: Stripe Checkout
+      if (!stripe) return res.status(500).json({ success: false, message: "Stripe not configured on server" });
+
+      const frontBase = buildFrontendBase(req);
+      if (!frontBase) {
+        return res.status(500).json({ success: false, message: "Frontend URL could not be determined." });
+      }
+
+      const successUrl = `${frontBase}/appointment/success?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${frontBase}/appointment/cancel`;
+
+      let session;
+      try {
+        session = await stripe.checkout.sessions.create({
+          payment_method_types: ["card"],
+          mode: "payment",
+          customer_email: email || undefined,
+          line_items: [
+            {
+              price_data: {
+                currency: "inr",
+                product_data: { name: `Appointment - ${String(patientName).slice(0, 40)}` },
+                unit_amount: Math.round(numericFee * 100),
+              },
+              quantity: 1,
+            },
+          ],
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+          metadata: {
+            doctorId: String(doctorId),
+            doctorName: doctorName || "",
+            speciality: speciality || "",
+            patientName: base.patientName,
+            mobile: base.mobile,
+            clerkUserId: clerkUserId || "",
+          },
+        });
+      } catch (stripeErr) {
+        console.error("Stripe session error in mock mode:", stripeErr);
+        return res.status(502).json({ success: false, message: `Stripe session error: ${stripeErr.message}` });
+      }
+
+      const created = createMockAppointment({
+        ...base,
+        sessionId: session.id,
+        payment: { ...base.payment, providerId: session.payment_intent || null },
+        status: "Pending",
+      });
+
+      return res.status(201).json({ success: true, appointment: created, checkoutUrl: session.url || null });
+    }
 
     const clerkUserId = resolveClerkUserId(req);
     if (!clerkUserId) return res.status(401).json({ success: false, message: "Authentication required (Clerk)" });
@@ -335,6 +500,32 @@ export const confirmPayment = async (req, res) => {
 
     if (session.payment_status !== "paid") {
       return res.status(400).json({ success: false, message: "Payment not completed" });
+    }
+
+    // Failsafe: Fallback to mock update if MongoDB is disconnected
+    if (mongoose.connection.readyState !== 1) {
+      console.warn("⚠️ MongoDB is disconnected. Confirming payment in mock mode.");
+      const meta = session.metadata || {};
+      const updated = updateMockAppointment(
+        { sessionId: session_id },
+        {
+          "payment": { method: "Online", status: "Paid", amount: Math.round((session.amount_total || 0) / 100), providerId: session.payment_intent || null },
+          status: "Confirmed",
+          paidAt: new Date(),
+        }
+      );
+      if (!updated && meta.doctorId && meta.mobile && meta.patientName) {
+        updateMockAppointment(
+          { doctorId: meta.doctorId, mobile: meta.mobile, patientName: meta.patientName },
+          {
+            "payment": { method: "Online", status: "Paid", amount: Math.round((session.amount_total || 0) / 100), providerId: session.payment_intent || null },
+            status: "Confirmed",
+            paidAt: new Date(),
+            sessionId: session_id,
+          }
+        );
+      }
+      return res.json({ success: true, message: "Payment confirmed (mock mode)" });
     }
 
     // Try match by sessionId first

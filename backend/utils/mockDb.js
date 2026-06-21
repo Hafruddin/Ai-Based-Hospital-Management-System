@@ -404,43 +404,111 @@ const rewriteImageUrl = (imageFile, req) => {
   return `${protocol}://${hostName}/assets/${imageFile}`;
 };
 
+export const mockAppointments = [];
+
+export const createMockAppointment = (data) => {
+  const newAppt = {
+    _id: "mockappt_" + Math.random().toString(36).substr(2, 9),
+    id: "mockappt_" + Math.random().toString(36).substr(2, 9),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  };
+  mockAppointments.push(newAppt);
+  return newAppt;
+};
+
+export const getMockAppointments = (filter = {}) => {
+  let list = [...mockAppointments];
+  if (filter.doctorId) {
+    list = list.filter((a) => String(a.doctorId) === String(filter.doctorId));
+  }
+  if (filter.createdBy) {
+    list = list.filter((a) => String(a.createdBy) === String(filter.createdBy));
+  }
+  if (filter.status) {
+    list = list.filter((a) => a.status === filter.status);
+  }
+  return list;
+};
+
+export const updateMockAppointment = (query = {}, update = {}) => {
+  const appt = mockAppointments.find((a) => {
+    if (query.sessionId && a.sessionId !== query.sessionId) return false;
+    if (query.doctorId && String(a.doctorId) !== String(query.doctorId)) return false;
+    if (query.mobile && a.mobile !== query.mobile) return false;
+    if (query.patientName && a.patientName !== query.patientName) return false;
+    return true;
+  });
+
+  if (appt) {
+    Object.keys(update).forEach((key) => {
+      if (typeof update[key] === 'object' && update[key] !== null) {
+        appt[key] = { ...appt[key], ...update[key] };
+      } else {
+        appt[key] = update[key];
+      }
+    });
+    appt.updatedAt = new Date();
+  }
+  return appt;
+};
+
 export const getMockDoctors = (req) => {
-  return doctorsData.map((d) => ({
-    _id: d._id,
-    id: d._id,
-    name: d.name,
-    specialization: d.specialization,
-    fee: d.fee,
-    imageUrl: rewriteImageUrl(d.imageFile, req),
-    appointmentsTotal: 0,
-    appointmentsCompleted: 0,
-    appointmentsCanceled: 0,
-    earnings: 0,
-    availability: "Available",
-    schedule: generateNext7DaysSlots(),
-    patients: d.patients,
-    rating: d.rating,
-    about: d.about,
-    experience: d.experience,
-    qualifications: d.qualifications,
-    location: d.location,
-    success: d.success,
-    raw: {
-      ...d,
+  return doctorsData.map((d) => {
+    const appts = mockAppointments.filter((a) => String(a.doctorId) === String(d._id));
+    const appointmentsTotal = appts.length;
+    const appointmentsCompleted = appts.filter((a) => ["Confirmed", "Completed"].includes(a.status)).length;
+    const appointmentsCanceled = appts.filter((a) => a.status === "Canceled").length;
+    const earnings = appts.filter((a) => ["Confirmed", "Completed"].includes(a.status)).reduce((sum, a) => sum + (a.fees || 0), 0);
+
+    return {
+      _id: d._id,
+      id: d._id,
+      name: d.name,
+      specialization: d.specialization,
+      fee: d.fee,
       imageUrl: rewriteImageUrl(d.imageFile, req),
-      schedule: generateNext7DaysSlots()
-    }
-  }));
+      appointmentsTotal,
+      appointmentsCompleted,
+      appointmentsCanceled,
+      earnings,
+      availability: "Available",
+      schedule: generateNext7DaysSlots(),
+      patients: d.patients,
+      rating: d.rating,
+      about: d.about,
+      experience: d.experience,
+      qualifications: d.qualifications,
+      location: d.location,
+      success: d.success,
+      raw: {
+        ...d,
+        imageUrl: rewriteImageUrl(d.imageFile, req),
+        schedule: generateNext7DaysSlots()
+      }
+    };
+  });
 };
 
 export const getMockDoctorById = (id, req) => {
   const d = doctorsData.find((doc) => String(doc._id) === String(id));
   if (!d) return null;
+  const appts = mockAppointments.filter((a) => String(a.doctorId) === String(d._id));
+  const appointmentsTotal = appts.length;
+  const appointmentsCompleted = appts.filter((a) => ["Confirmed", "Completed"].includes(a.status)).length;
+  const appointmentsCanceled = appts.filter((a) => a.status === "Canceled").length;
+  const earnings = appts.filter((a) => ["Confirmed", "Completed"].includes(a.status)).reduce((sum, a) => sum + (a.fees || 0), 0);
+
   return {
     ...d,
     imageUrl: rewriteImageUrl(d.imageFile, req),
     availability: "Available",
-    schedule: generateNext7DaysSlots()
+    schedule: generateNext7DaysSlots(),
+    appointmentsTotal,
+    appointmentsCompleted,
+    appointmentsCanceled,
+    earnings
   };
 };
 
