@@ -1,5 +1,20 @@
+import mongoose from "mongoose";
 import Service from "../models/Service.js";
 import { uploadToCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
+import { getMockServices, getMockServiceById } from "../utils/mockDb.js";
+
+const rewriteImageUrl = (url, req) => {
+  if (!url) return url;
+  if (typeof url === 'string') {
+    const assetIdx = url.indexOf('/assets/');
+    if (assetIdx !== -1) {
+      const path = url.slice(assetIdx);
+      const host = req.protocol + '://' + req.get('host');
+      return host + path;
+    }
+  }
+  return url;
+};
 
 /* -----------------------
    Helpers
@@ -92,7 +107,9 @@ export async function createService(req, res) {
     });
 
     const saved = await service.save();
-    return res.status(201).json({ success: true, data: saved, message: "Service created" });
+    const out = saved.toObject();
+    if (out.imageUrl) out.imageUrl = rewriteImageUrl(out.imageUrl, req);
+    return res.status(201).json({ success: true, data: out, message: "Service created" });
   } catch (err) {
     console.error("createService error:", err);
     return res.status(500).json({ success: false, message: "Server error" });
@@ -104,8 +121,19 @@ export async function createService(req, res) {
    ----------------------- */
 export async function getServices(req, res) {
   try {
+    // Failsafe: Fallback to mock data if MongoDB is disconnected
+    if (mongoose.connection.readyState !== 1) {
+      console.warn("⚠️ MongoDB is disconnected. Serving fallback mock services data.");
+      const mock = getMockServices(req);
+      return res.status(200).json({ success: true, data: mock });
+    }
+
     const list = await Service.find().sort({ createdAt: -1 }).lean();
-    return res.status(200).json({ success: true, data: list });
+    const normalized = list.map(s => ({
+      ...s,
+      imageUrl: rewriteImageUrl(s.imageUrl, req)
+    }));
+    return res.status(200).json({ success: true, data: normalized });
   } catch (err) {
     console.error("getServices error:", err);
     return res.status(500).json({ success: false, message: "Server error" });
@@ -118,8 +146,19 @@ export async function getServices(req, res) {
 export async function getServiceById(req, res) {
   try {
     const { id } = req.params;
+
+    // Failsafe: Fallback to mock data if MongoDB is disconnected
+    if (mongoose.connection.readyState !== 1) {
+      const mock = getMockServiceById(id, req);
+      if (!mock) return res.status(404).json({ success: false, message: "Service not found" });
+      return res.status(200).json({ success: true, data: mock });
+    }
+
     const service = await Service.findById(id).lean();
     if (!service) return res.status(404).json({ success: false, message: "Service not found" });
+    if (service.imageUrl) {
+      service.imageUrl = rewriteImageUrl(service.imageUrl, req);
+    }
     return res.status(200).json({ success: true, data: service });
   } catch (err) {
     console.error("getServiceById error:", err);
@@ -167,7 +206,9 @@ export async function updateService(req, res) {
     }
 
     const updated = await Service.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
-    return res.status(200).json({ success: true, data: updated, message: "Service updated" });
+    const out = updated.toObject();
+    if (out.imageUrl) out.imageUrl = rewriteImageUrl(out.imageUrl, req);
+    return res.status(200).json({ success: true, data: out, message: "Service updated" });
   } catch (err) {
     console.error("updateService error:", err);
     return res.status(500).json({ success: false, message: "Server error" });

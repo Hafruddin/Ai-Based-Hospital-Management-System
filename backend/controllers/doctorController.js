@@ -1,7 +1,9 @@
 // controllers/doctorController.js
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import Doctor from "../models/Doctor.js";
 import { uploadToCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
+import { getMockDoctors, getMockDoctorById } from "../utils/mockDb.js";
 
 /* ---------------- Helpers ---------------- */
 
@@ -23,7 +25,6 @@ function dedupeAndSortSchedule(schedule = {}) {
   });
   return out;
 }
-
 function parseScheduleInput(s) {
   if (!s) return {};
   if (typeof s === "string") {
@@ -36,8 +37,25 @@ function parseScheduleInput(s) {
   return dedupeAndSortSchedule(s || {});
 }
 
-function normalizeDocForClient(raw = {}) {
+const rewriteImageUrl = (url, req) => {
+  if (!url) return url;
+  if (typeof url === 'string') {
+    const assetIdx = url.indexOf('/assets/');
+    if (assetIdx !== -1) {
+      const path = url.slice(assetIdx);
+      const host = req.protocol + '://' + req.get('host');
+      return host + path;
+    }
+  }
+  return url;
+};
+
+function normalizeDocForClient(raw = {}, req) {
   const doc = { ...raw };
+
+  if (req && doc.imageUrl) {
+    doc.imageUrl = rewriteImageUrl(doc.imageUrl, req);
+  }
 
   // convert Mongoose Map to plain object
   if (doc.schedule && typeof doc.schedule.forEach === "function") {
@@ -111,7 +129,7 @@ export async function createDoctor(req, res) {
 
     const token = jwt.sign({ id: doc._id.toString(), email: doc.email, role: "doctor" }, secret, { expiresIn: "7d" });
 
-    const out = normalizeDocForClient(doc.toObject());
+    const out = normalizeDocForClient(doc.toObject(), req);
     delete out.password;
 
     return res.status(201).json({ success: true, data: out, token });
@@ -123,6 +141,18 @@ export async function createDoctor(req, res) {
 
 export const getDoctors = async (req, res) => {
   try {
+    // Failsafe: Fallback to mock data if MongoDB is disconnected
+    if (mongoose.connection.readyState !== 1) {
+      console.warn("⚠️ MongoDB is disconnected. Serving fallback mock doctors data.");
+      const mock = getMockDoctors(req);
+      return res.json({ 
+        success: true, 
+        data: mock, 
+        doctors: mock, 
+        meta: { page: 1, limit: mock.length, total: mock.length, isFallback: true } 
+      });
+    }
+
     const { q = "", limit: limitRaw = 200, page: pageRaw = 1 } = req.query;
     const limit = Math.min(500, Math.max(1, parseInt(limitRaw, 10) || 200));
     const page = Math.max(1, parseInt(pageRaw, 10) || 1);
@@ -182,7 +212,7 @@ export const getDoctors = async (req, res) => {
       name: d.name || "",
       specialization: d.specialization || d.speciality || "",
       fee: d.fee ?? d.fees ?? d.consultationFee ?? 0,
-      imageUrl: d.imageUrl || d.image || d.avatar || null,
+      imageUrl: rewriteImageUrl(d.imageUrl || d.image || d.avatar || null, req),
       appointmentsTotal: d.appointmentsTotal || 0,
       appointmentsCompleted: d.appointmentsCompleted || 0,
       appointmentsCanceled: d.appointmentsCanceled || 0,
@@ -211,9 +241,17 @@ export const getDoctors = async (req, res) => {
 export async function getDoctorById(req, res) {
   try {
     const { id } = req.params;
+
+    // Failsafe: Fallback to mock data if MongoDB is disconnected
+    if (mongoose.connection.readyState !== 1) {
+      const mockDoc = getMockDoctorById(id, req);
+      if (!mockDoc) return res.status(404).json({ success: false, message: "Doctor not found" });
+      return res.json({ success: true, data: mockDoc });
+    }
+
     const doc = await Doctor.findById(id).select("-password").lean();
     if (!doc) return res.status(404).json({ success: false, message: "Doctor not found" });
-    return res.json({ success: true, data: normalizeDocForClient(doc) });
+    return res.json({ success: true, data: normalizeDocForClient(doc, req) });
   } catch (err) {
     console.error("getDoctorById error:", err);
     return res.status(500).json({ success: false, message: "Server error" });
@@ -261,7 +299,7 @@ export async function updateDoctor(req, res) {
 
     await existing.save();
 
-    const out = normalizeDocForClient(existing.toObject());
+    const out = normalizeDocForClient(existing.toObject(), req);
     delete out.password;
     return res.json({ success: true, data: out });
   } catch (err) {
@@ -306,7 +344,7 @@ export async function toggleAvailability(req, res) {
     else doc.availability = doc.availability === "Available" ? "Unavailable" : "Available";
 
     await doc.save();
-    const out = normalizeDocForClient(doc.toObject());
+    const out = normalizeDocForClient(doc.toObject(), req);
     delete out.password;
     return res.json({ success: true, data: out });
   } catch (err) {
@@ -331,7 +369,7 @@ export async function doctorLogin(req, res) {
 
     const token = jwt.sign({ id: doc._id.toString(), email: doc.email, role: "doctor" }, secret, { expiresIn: "7d" });
 
-    const out = doc.toObject();
+    const out = normalizeDocForClient(doc.toObject(), req);
     delete out.password;
     return res.json({ success: true, token, data: out });
   } catch (err) {

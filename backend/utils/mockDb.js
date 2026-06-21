@@ -1,8 +1,4 @@
-// seeder.js
-import mongoose from "mongoose";
-import "dotenv/config";
-import Doctor from "./models/Doctor.js";
-import Service from "./models/Service.js";
+// utils/mockDb.js
 
 const generateNext7DaysSlots = () => {
   const schedule = {};
@@ -18,6 +14,7 @@ const generateNext7DaysSlots = () => {
 
 const doctorsData = [
   {
+    _id: "6a3820c82cecc9714b826111",
     name: "Dr. Sarah Johnson",
     specialization: "Cardiologist",
     imageFile: "HD1.png",
@@ -32,6 +29,7 @@ const doctorsData = [
     email: "sarah@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b826112",
     name: "Dr. Michael Chen",
     specialization: "Neurologist",
     imageFile: "HD2.png",
@@ -46,6 +44,7 @@ const doctorsData = [
     email: "michael@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b826113",
     name: "Dr. Emily Rodriguez",
     specialization: "Pediatrician",
     imageFile: "HD3.png",
@@ -60,6 +59,7 @@ const doctorsData = [
     email: "emily@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b826114",
     name: "Dr. James Wilson",
     specialization: "Orthopedic Surgeon",
     imageFile: "HD4.png",
@@ -74,6 +74,7 @@ const doctorsData = [
     email: "james@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b826115",
     name: "Dr. Priya Sharma",
     specialization: "Dermatologist",
     imageFile: "HD5.png",
@@ -88,6 +89,7 @@ const doctorsData = [
     email: "priya@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b826116",
     name: "Dr. Robert Brown",
     specialization: "Psychiatrist",
     imageFile: "HD6.png",
@@ -102,6 +104,7 @@ const doctorsData = [
     email: "robert@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b826117",
     name: "Dr. Lisa Wang",
     specialization: "Gynecologist",
     imageFile: "HD7.png",
@@ -116,6 +119,7 @@ const doctorsData = [
     email: "lisa@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b826118",
     name: "Dr. David Kim",
     specialization: "Oncologist",
     imageFile: "HD8.png",
@@ -130,6 +134,7 @@ const doctorsData = [
     email: "david@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b826119",
     name: "Dr. Rohan Mehta",
     specialization: "ENT Specialist",
     imageFile: "D2.png",
@@ -144,6 +149,7 @@ const doctorsData = [
     email: "rohan@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b82611a",
     name: "Dr. Kavita Rao",
     specialization: "General Physician",
     imageFile: "D1.png",
@@ -158,6 +164,7 @@ const doctorsData = [
     email: "kavita@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b82611b",
     name: "Dr. Sameer Ali",
     specialization: "Pulmonologist",
     imageFile: "D4.png",
@@ -172,6 +179,7 @@ const doctorsData = [
     email: "sameer@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b82611c",
     name: "Dr. Aditi Verma",
     specialization: "Dentist",
     imageFile: "D3.png",
@@ -186,6 +194,7 @@ const doctorsData = [
     email: "aditi@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b82611d",
     name: "Dr. Neha Kapoor",
     specialization: "Physiotherapist",
     imageFile: "D5.png",
@@ -200,6 +209,7 @@ const doctorsData = [
     email: "neha@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b82611e",
     name: "Dr. Ishaan Khanna",
     specialization: "Psychologist",
     imageFile: "D6.png",
@@ -214,6 +224,7 @@ const doctorsData = [
     email: "ishaan@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b82611f",
     name: "Dr. Virat Anand",
     specialization: "Eye Specialist",
     imageFile: "D7.png",
@@ -228,6 +239,7 @@ const doctorsData = [
     email: "virat@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b826120",
     name: "Dr. Jatin Arora",
     specialization: "Gastroenterologist",
     imageFile: "D8.png",
@@ -242,6 +254,7 @@ const doctorsData = [
     email: "jatin@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b826121",
     name: "Dr. Aarav Singh",
     specialization: "Urologist",
     imageFile: "D9.png",
@@ -256,6 +269,7 @@ const doctorsData = [
     email: "aarav@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b826122",
     name: "Dr. Megha Shah",
     specialization: "Nutritionist",
     imageFile: "D10.png",
@@ -270,6 +284,7 @@ const doctorsData = [
     email: "megha@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b826123",
     name: "Dr. Helena Grace",
     specialization: "Radiologist",
     imageFile: "D11.png",
@@ -284,6 +299,7 @@ const doctorsData = [
     email: "helena@medicare.com"
   },
   {
+    _id: "6a3820c82cecc9714b826124",
     name: "Dr. Kabir Malhotra",
     specialization: "Nephrologist",
     imageFile: "D12.png",
@@ -301,6 +317,7 @@ const doctorsData = [
 
 const servicesData = [
   {
+    _id: "6a3820c92cecc9714b826125",
     name: "Complete Blood Count (CBC)",
     about: "Evaluates your overall health and detects a wide range of disorders, including anemia, infection, and leukemia.",
     shortDescription: "Complete blood count diagnostic test.",
@@ -310,6 +327,7 @@ const servicesData = [
     instructions: ["Fasting is not required", "Avoid heavy meals before the test", "Inform doctor of medications"]
   },
   {
+    _id: "6a3820c92cecc9714b826126",
     name: "Lipid Profile",
     about: "Measures the amount of cholesterol and other fats in your blood to assess cardiovascular risk.",
     shortDescription: "Cholesterol and cardiovascular risk assessment.",
@@ -319,6 +337,7 @@ const servicesData = [
     instructions: ["10-12 hours fasting required", "Only water is allowed during fasting", "Avoid alcohol 24h prior"]
   },
   {
+    _id: "6a3820c92cecc9714b826127",
     name: "Thyroid Profile (T3, T4, TSH)",
     about: "Assesses thyroid gland function and helps diagnose thyroid disorders like hypo/hyperthyroidism.",
     shortDescription: "Thyroid gland function evaluation.",
@@ -328,6 +347,7 @@ const servicesData = [
     instructions: ["Morning sample preferred", "Fasting is not mandatory"]
   },
   {
+    _id: "6a3820c92cecc9714b826128",
     name: "Liver Function Test (LFT)",
     about: "Measures levels of proteins, liver enzymes, and bilirubin in your blood to evaluate liver health.",
     shortDescription: "Liver health and enzyme levels evaluation.",
@@ -337,6 +357,7 @@ const servicesData = [
     instructions: ["Fasting preferred but not mandatory", "Avoid alcohol 24 hours prior"]
   },
   {
+    _id: "6a3820c92cecc9714b826129",
     name: "Kidney Function Test (KFT)",
     about: "Evaluates how well your kidneys are working by measuring urea, creatinine, and electrolytes.",
     shortDescription: "Kidney performance and creatinine evaluation.",
@@ -346,6 +367,7 @@ const servicesData = [
     instructions: ["Drink plenty of water before the test", "Fasting not required"]
   },
   {
+    _id: "6a3820c92cecc9714b82612a",
     name: "X-Ray Chest",
     about: "Produces images of the heart, lungs, airways, blood vessels, and the bones of the spine and chest.",
     shortDescription: "Chest and lungs imaging diagnostic.",
@@ -355,6 +377,7 @@ const servicesData = [
     instructions: ["Remove metal objects, jewelry before the test", "Inform technician if pregnant"]
   },
   {
+    _id: "6a3820c92cecc9714b82612b",
     name: "Ultrasound Whole Abdomen",
     about: "Uses sound waves to produce pictures of the organs within the abdomen, including liver, gallbladder, kidneys, spleen.",
     shortDescription: "Abdominal organs ultrasound scan.",
@@ -364,6 +387,7 @@ const servicesData = [
     instructions: ["Fasting of 6 hours required", "Full bladder required for pelvic scan (drink 4-5 glasses of water)"]
   },
   {
+    _id: "6a3820c92cecc9714b82612c",
     name: "HbA1c (Glycated Haemoglobin)",
     about: "Measures your average blood sugar levels over the past 3 months to monitor diabetes control.",
     shortDescription: "Average blood sugar levels monitoring.",
@@ -374,51 +398,76 @@ const servicesData = [
   }
 ];
 
-const seedDB = async () => {
-  const uri = process.env.MONGODB_URI || process.env.MONGO_URL;
-  if (!uri) {
-    console.error("❌ MONGODB_URI is not defined");
-    process.exit(1);
-  }
-
-  try {
-    await mongoose.connect(uri);
-    console.log("✅ Connected to MongoDB for seeding");
-
-    // Clear existing data
-    await Doctor.deleteMany({});
-    await Service.deleteMany({});
-    console.log("🗑️ Cleared existing Doctors and Services");
-
-    // Seed Doctors
-    const doctors = doctorsData.map((d) => ({
-      ...d,
-      password: "password123", // default password
-      imageUrl: `https://ai-based-hospital-management-system-1.onrender.com/assets/${d.imageFile}`,
-      schedule: generateNext7DaysSlots()
-    }));
-
-    await Doctor.insertMany(doctors);
-    console.log(`👨‍⚕️ Seeded ${doctors.length} doctors`);
-
-    // Seed Services
-    const services = servicesData.map((s) => ({
-      ...s,
-      imageUrl: `https://ai-based-hospital-management-system-1.onrender.com/assets/${s.imageFile}`,
-      slots: generateNext7DaysSlots(),
-      dates: Object.keys(generateNext7DaysSlots())
-    }));
-
-    await Service.insertMany(services);
-    console.log(`🧪 Seeded ${services.length} services`);
-
-    console.log("🎉 Seeding completed successfully!");
-    mongoose.connection.close();
-    process.exit(0);
-  } catch (error) {
-    console.error("❌ Seeding failed:", error);
-    process.exit(1);
-  }
+const rewriteImageUrl = (imageFile, req) => {
+  const host = req.protocol + "://" + req.get("host");
+  return `${host}/assets/${imageFile}`;
 };
 
-seedDB();
+export const getMockDoctors = (req) => {
+  return doctorsData.map((d) => ({
+    _id: d._id,
+    id: d._id,
+    name: d.name,
+    specialization: d.specialization,
+    fee: d.fee,
+    imageUrl: rewriteImageUrl(d.imageFile, req),
+    appointmentsTotal: 0,
+    appointmentsCompleted: 0,
+    appointmentsCanceled: 0,
+    earnings: 0,
+    availability: "Available",
+    schedule: generateNext7DaysSlots(),
+    patients: d.patients,
+    rating: d.rating,
+    about: d.about,
+    experience: d.experience,
+    qualifications: d.qualifications,
+    location: d.location,
+    success: d.success,
+    raw: {
+      ...d,
+      imageUrl: rewriteImageUrl(d.imageFile, req),
+      schedule: generateNext7DaysSlots()
+    }
+  }));
+};
+
+export const getMockDoctorById = (id, req) => {
+  const d = doctorsData.find((doc) => String(doc._id) === String(id));
+  if (!d) return null;
+  return {
+    ...d,
+    imageUrl: rewriteImageUrl(d.imageFile, req),
+    availability: "Available",
+    schedule: generateNext7DaysSlots()
+  };
+};
+
+export const getMockServices = (req) => {
+  return servicesData.map((s) => ({
+    _id: s._id,
+    name: s.name,
+    about: s.about,
+    shortDescription: s.shortDescription,
+    price: s.price,
+    available: s.available,
+    imageUrl: rewriteImageUrl(s.imageFile, req),
+    dates: Object.keys(generateNext7DaysSlots()),
+    slots: generateNext7DaysSlots(),
+    instructions: s.instructions,
+    totalAppointments: 0,
+    completed: 0,
+    canceled: 0
+  }));
+};
+
+export const getMockServiceById = (id, req) => {
+  const s = servicesData.find((svc) => String(svc._id) === String(id));
+  if (!s) return null;
+  return {
+    ...s,
+    imageUrl: rewriteImageUrl(s.imageFile, req),
+    dates: Object.keys(generateNext7DaysSlots()),
+    slots: generateNext7DaysSlots()
+  };
+};
