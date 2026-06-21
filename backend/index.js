@@ -53,11 +53,16 @@ app.use("/api/service-appointments", serviceAppointmentRouter);
 
 // Test route
 app.get('/', (req, res) => {
+    const uri = process.env.MONGODB_URI || "";
     res.json({
         message: 'API Working ',
         dbState: mongoose.connection.readyState,
         dbError: dbConnectionInfo.error,
-        hasUri: !!process.env.MONGODB_URI,
+        hasUri: !!uri,
+        uriLength: uri.length,
+        uriStartsWithMongo: uri.startsWith("mongodb+srv://") || uri.startsWith("mongodb://"),
+        uriHasQuotes: uri.includes('"') || uri.includes("'"),
+        uriHasSpaces: uri.includes(' ') || uri.includes('\r') || uri.includes('\n'),
         hasSecret: !!process.env.JWT_SECRET
     });
 });
