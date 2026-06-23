@@ -443,7 +443,7 @@ export const updateMockAppointment = (query = {}, update = {}) => {
 
   if (appt) {
     Object.keys(update).forEach((key) => {
-      if (typeof update[key] === 'object' && update[key] !== null) {
+      if (typeof update[key] === 'object' && update[key] !== null && !(update[key] instanceof Date) && !Array.isArray(update[key])) {
         appt[key] = { ...appt[key], ...update[key] };
       } else {
         appt[key] = update[key];

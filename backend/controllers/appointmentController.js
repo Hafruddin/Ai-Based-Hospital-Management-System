@@ -506,6 +506,8 @@ export const confirmPayment = async (req, res) => {
     // Failsafe: Fallback to mock update if MongoDB is disconnected
     if (mongoose.connection.readyState !== 1) {
       console.warn("⚠️ MongoDB is disconnected. Confirming payment in mock mode.");
+      console.log("[DEBUG confirmPayment] session_id:", session_id);
+      console.log("[DEBUG confirmPayment] current mock appointments:", getMockAppointments());
       const meta = session.metadata || {};
       const updated = updateMockAppointment(
         { sessionId: session_id },
@@ -515,8 +517,10 @@ export const confirmPayment = async (req, res) => {
           paidAt: new Date(),
         }
       );
+      console.log("[DEBUG confirmPayment] updateMockAppointment result by sessionId:", updated);
       if (!updated && meta.doctorId && meta.mobile && meta.patientName) {
-        updateMockAppointment(
+        console.log("[DEBUG confirmPayment] sessionId match failed. Attempting fallback metadata match:", meta);
+        const updatedMeta = updateMockAppointment(
           { doctorId: meta.doctorId, mobile: meta.mobile, patientName: meta.patientName },
           {
             "payment": { method: "Online", status: "Paid", amount: Math.round((session.amount_total || 0) / 100), providerId: session.payment_intent || null },
@@ -525,6 +529,7 @@ export const confirmPayment = async (req, res) => {
             sessionId: session_id,
           }
         );
+        console.log("[DEBUG confirmPayment] updateMockAppointment result by metadata:", updatedMeta);
       }
       return res.json({ success: true, message: "Payment confirmed (mock mode)" });
     }
