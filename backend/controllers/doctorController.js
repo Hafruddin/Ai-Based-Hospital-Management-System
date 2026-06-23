@@ -363,14 +363,18 @@ export async function doctorLogin(req, res) {
     if (mongoose.connection.readyState !== 1) {
       console.warn("⚠️ MongoDB is disconnected. Handling doctor login in mock mode.");
       const mockDocs = getMockDoctors(req);
-      const mockDoc = mockDocs.find((d) => String(d.email).toLowerCase() === email.toLowerCase());
+      const mockDoc = mockDocs.find((d) => String(d.raw?.email || d.email || "").toLowerCase() === email.toLowerCase());
       if (!mockDoc) return res.status(401).json({ success: false, message: "Invalid credentials" });
 
       const secret = process.env.JWT_SECRET;
       if (!secret) return res.status(500).json({ success: false, message: "JWT_SECRET not configured" });
 
-      const token = jwt.sign({ id: String(mockDoc.id || mockDoc._id), email: mockDoc.email, role: "doctor" }, secret, { expiresIn: "7d" });
-      const out = { ...mockDoc };
+      const docEmail = mockDoc.raw?.email || mockDoc.email || "";
+      const token = jwt.sign({ id: String(mockDoc.id || mockDoc._id), email: docEmail, role: "doctor" }, secret, { expiresIn: "7d" });
+      const out = { 
+        ...mockDoc,
+        email: docEmail
+      };
       delete out.password;
       return res.json({ success: true, token, data: out });
     }

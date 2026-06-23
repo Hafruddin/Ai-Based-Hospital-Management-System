@@ -56,7 +56,7 @@ app.get('/', (req, res) => {
     const uri = process.env.MONGODB_URI || "";
     res.json({
         message: 'API Working ',
-        version: '1.0.3',
+        version: '1.0.4',
         dbState: mongoose.connection.readyState,
         dbError: dbConnectionInfo.error,
         hasUri: !!uri,
